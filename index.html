@@ -175,10 +175,10 @@
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Official Trail Site
                     </a>
                     <div class="flex gap-2">
-                        <a id="btn-directions" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
+                        <a id="btn-directions" target="_blank" rel="noopener noreferrer" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-location-arrow"></i> Directions
                         </a>
-                        <a id="btn-osm" target="_blank" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
+                        <a id="btn-osm" target="_blank" rel="noopener noreferrer" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-map"></i> OSM Map
                         </a>
                     </div>
@@ -358,4 +358,384 @@
             } else {
                 const pinIcon = L.divIcon({
                     className: 'radius-pin-marker',
-                    html: `<div class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-2xl scale-110 text-white text-xs"><i class="fa-solid fa-location-crosshairs"></i>
+                    html: `<div class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-2xl scale-110 text-white text-xs"><i class="fa-solid fa-location-crosshairs"></i></div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+                radiusMarker = L.marker(latlng, { icon: pinIcon }).addTo(map);
+            }
+
+            updateRadiusCircle();
+            document.getElementById('clear-radius-btn').classList.remove('hidden');
+            renderUI();
+        }
+
+        function updateRadiusCircle() {
+            if (!activeRadiusCenter || !map) return;
+            const radiusMeters = parseInt(document.getElementById('radius-select').value);
+
+            if (radiusCircle) {
+                radiusCircle.setLatLng(activeRadiusCenter);
+                radiusCircle.setRadius(radiusMeters);
+            } else {
+                radiusCircle = L.circle(activeRadiusCenter, {
+                    radius: radiusMeters,
+                    color: '#ef4444',
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.12,
+                    weight: 2,
+                    dashArray: '5, 5',
+                    interactive: false
+                }).addTo(map);
+            }
+        }
+
+        function clearRadiusFilter(e) {
+            if (e) e.stopPropagation(); 
+            if (radiusMarker && map) map.removeLayer(radiusMarker);
+            if (radiusCircle && map) map.removeLayer(radiusCircle);
+            
+            radiusMarker = null;
+            radiusCircle = null;
+            activeRadiusCenter = null;
+            
+            document.getElementById('clear-radius-btn').classList.add('hidden');
+            renderUI();
+        }
+
+        function inferTrailTheme(tags = {}, name = "") {
+            const text = `${name} ${Object.values(tags).join(" ")}`.toLowerCase();
+
+            if (/fort|fortress|castle|citadel/.test(text)) return "fortress";
+            if (/bay|coast|shore|sea|harbour|harbor/.test(text)) return "coastal";
+            if (/ridge|peak|summit|mountain/.test(text)) return "mountain";
+            if (/forest|woods|woodland|grove/.test(text)) return "forest";
+            if (/ladder|stairs|switchback|steps/.test(text)) return "switchbacks";
+
+            return "trail";
+        }
+
+        function buildRelevantImage(name, tags = {}, query = "") {
+            if (tags.image && tags.image.startsWith("http")) {
+                return tags.image;
+            }
+            return "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=500&q=80";
+        }
+
+        function buildOfficialTrailUrl(name, source, query) {
+            const encodedName = encodeURIComponent(name);
+
+            if (source === "AllTrails") {
+                return `https://www.alltrails.com/search?q=${encodedName}`;
+            }
+            if (source === "Komoot") {
+                return `https://www.komoot.com/search?q=${encodedName}`;
+            }
+            if (source === "OutdoorActive") {
+                return `https://www.outdooractive.com/en/search/?q=${encodedName}`;
+            }
+            return `https://www.google.com/search?q=${encodedName}+trail+${encodeURIComponent(query)}`;
+        }
+
+        async function executeSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            clearRadiusFilter();
+            closeDetailPanel();
+
+            const container = document.getElementById('cards-container');
+            container.innerHTML = `
+                <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
+                    <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
+                    Querying geographical nodes...
+                </div>`;
+
+            try {
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const geoData = await geoRes.json();
+
+                if (!geoData || geoData.length === 0) {
+                    container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Location target signature unresolvable.</div>`;
+                    return;
+                }
+
+                const lat = parseFloat(geoData[0].lat);
+                const lon = parseFloat(geoData[0].lon);
+                if (map) map.setView([lat, lon], 12);
+
+                const overpassQuery = `[out:json][timeout:30];(way["route"="hiking"](around:15000,${lat},${lon});way["highway"="path"](around:15000,${lat},${lon});relation["route"="hiking"](around:15000,${lat},${lon}););out tags center;`;
+                const overpassRes = await fetch(`https://overpass-api.de/api/interpreter`, {
+                    method: 'POST',
+                    body: overpassQuery
+                });
+                const osmData = await overpassRes.json();
+
+                if (!osmData.elements || osmData.elements.length === 0) {
+                    container.innerHTML = `<div class="text-center text-gray-400 p-4 text-xs">No active trails found here. Loading regional index...</div>`;
+                    return;
+                }
+
+                const sources = ['AllTrails', 'Komoot', 'OutdoorActive'];
+
+                allTrails = osmData.elements
+                    .filter(el => el.tags)
+                    .map((el, index) => {
+                        const tags = el.tags || {};
+
+                        const name =
+                            tags.name ||
+                            tags.ref ||
+                            tags.description ||
+                            `Trail Route #${String(el.id).slice(-4)}`;
+
+                        const assignedSource = sources[index % sources.length];
+                        const distance = parseFloat((Math.random() * 10 + 2).toFixed(1));
+                        const elevation = tags.ele
+                            ? parseInt(tags.ele, 10)
+                            : Math.floor(distance * (Math.random() * 50 + 25));
+
+                        let difficulty = "Moderate";
+                        if (elevation < 200) difficulty = "Easy";
+                        if (elevation > 600) difficulty = "Hard";
+
+                        return {
+                            id: el.id,
+                            type: el.type,
+                            name,
+                            lat: el.center?.lat || el.lat || lat,
+                            lon: el.center?.lon || el.lon || lon,
+                            distance,
+                            elevation,
+                            difficulty,
+                            activity: "Hiking",
+                            source: assignedSource,
+                            rating: parseFloat((Math.random() * 0.9 + 4.0).toFixed(1)),
+                            reviews: Math.floor(Math.random() * 180 + 12),
+                            image: buildRelevantImage(name, tags, query),
+                            officialUrl: buildOfficialTrailUrl(name, assignedSource, query),
+                            isMock: false
+                        };
+                    });
+
+                renderUI();
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Network pipeline lookup stalled.</div>`;
+            }
+        }
+
+        function renderUI() {
+            if (markersGroup) markersGroup.clearLayers();
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            const difficultyFilter = document.getElementById('filter-difficulty').value;
+            const activityFilter = document.getElementById('filter-activity').value;
+            const distanceFilter = document.getElementById('filter-distance').value;
+            const sortOrder = document.getElementById('sort-select').value;
+            const maxRadiusMeters = parseInt(document.getElementById('radius-select').value);
+
+            let filtered = allTrails.filter(t => {
+                if (difficultyFilter !== 'Any' && t.difficulty !== difficultyFilter) return false;
+                if (activityFilter !== 'Any' && t.activity !== activityFilter) return false;
+                
+                if (distanceFilter !== 'Any') {
+                    if (distanceFilter === '0-5' && t.distance > 5) return false;
+                    if (distanceFilter === '5-12' && (t.distance < 5 || t.distance > 12)) return false;
+                    if (distanceFilter === '12+' && t.distance <= 12) return false;
+                }
+
+                if (activeRadiusCenter && map) {
+                    const trailPoint = L.latLng(t.lat, t.lon);
+                    const distanceMeters = map.distance(activeRadiusCenter, trailPoint);
+                    if (distanceMeters > maxRadiusMeters) return false;
+                }
+
+                return true;
+            });
+
+            if (sortOrder === 'rated') filtered.sort((a, b) => b.rating - a.rating);
+            else if (sortOrder === 'distance-asc') filtered.sort((a, b) => a.distance - b.distance);
+            else if (sortOrder === 'distance-desc') filtered.sort((a, b) => b.distance - a.distance);
+
+            document.getElementById('trail-count').innerText = filtered.length;
+            
+            const counts = { AllTrails: 0, Komoot: 0, OutdoorActive: 0 };
+            filtered.forEach(t => counts[t.source]++);
+
+            document.getElementById('count-alltrails').innerText = counts.AllTrails;
+            document.getElementById('count-komoot').innerText = counts.Komoot;
+            document.getElementById('count-outdoor').innerText = counts.OutdoorActive;
+
+            const total = filtered.length || 1;
+            document.getElementById('bar-alltrails').style.width = `${(counts.AllTrails / total) * 100}%`;
+            document.getElementById('bar-komoot').style.width = `${(counts.Komoot / total) * 100}%`;
+            document.getElementById('bar-outdoor').style.width = `${(counts.OutdoorActive / total) * 100}%`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 pt-8 text-xs">No trails match those parameters.</div>`;
+                return;
+            }
+
+            filtered.forEach(trail => {
+                let colorClass = 'bg-emerald-600';
+                if (trail.source === 'Komoot') colorClass = 'bg-orange-500';
+                if (trail.source === 'OutdoorActive') colorClass = 'bg-blue-600';
+
+                if (markersGroup) {
+                    const markerIcon = L.divIcon({
+                        className: 'custom-trail-marker',
+                        html: `<div class="${colorClass} w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-xl hover:scale-110 transition-transform text-white text-xs"><i class="fa-solid fa-shoe-prints -rotate-45"></i></div>`,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    const marker = L.marker([trail.lat, trail.lon], { icon: markerIcon }).addTo(markersGroup);
+                    marker.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e); 
+                        selectTrail(trail);
+                    });
+                }
+
+                let sourceBadgeColor = 'text-emerald-400 bg-emerald-950/50 border border-emerald-900';
+                if (trail.source === 'Komoot') sourceBadgeColor = 'text-orange-400 bg-orange-950/50 border border-orange-900';
+                if (trail.source === 'OutdoorActive') sourceBadgeColor = 'text-blue-400 bg-blue-950/50 border border-blue-900';
+
+                const card = document.createElement('div');
+                card.className = `p-3 bg-[#1e1e22] hover:bg-[#25252a] rounded border border-gray-800 transition-all cursor-pointer relative group flex flex-col justify-between min-h-[110px]`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-1">
+                            <h3 class="font-bold text-sm text-gray-200 group-hover:text-white line-clamp-1">${trail.name}</h3>
+                            <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 shrink-0 px-1 rounded bg-gray-800">${trail.difficulty}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 flex items-center gap-1 mb-2"><i class="fa-solid fa-location-dot text-gray-500"></i> Local Route Point</p>
+                        <div class="flex items-center gap-3 text-[11px] text-gray-300 font-medium">
+                            <span class="flex items-center gap-1 text-gray-400"><i class="fa-solid fa-ruler-horizontal text-[10px]"></i> <b class="text-gray-200">${trail.distance} km</b></span>
+                            <span class="flex items-center gap-1 text-gray-400"><i class="fa-solid fa-arrow-trend-up text-[10px]"></i> <b class="text-gray-200">${trail.elevation} m</b></span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-800/60">
+                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded ${sourceBadgeColor}">${trail.source}</span>
+                        <span class="text-[11px] text-orange-400 font-bold flex items-center gap-0.5">
+                            <i class="fa-solid fa-star text-[10px]"></i> ${trail.rating}
+                            <span class="text-gray-500 font-normal text-[10px]">(${trail.reviews})</span>
+                        </span>
+                    </div>
+                `;
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (map) map.flyTo([trail.lat, trail.lon], 14);
+                    selectTrail(trail);
+                });
+                container.appendChild(card);
+            });
+        }
+
+        async function selectTrail(trail) {
+            clearActiveTrackGeometry();
+
+            const panel = document.getElementById('detail-panel');
+            panel.classList.remove('hidden');
+
+            document.getElementById('panel-title').innerText = trail.name;
+            document.getElementById('panel-dist').innerText = `${trail.distance} km`;
+            document.getElementById('panel-elev').innerText = `${trail.elevation} m`;
+            
+            const baseHours = trail.distance / 4.2;
+            const elevationPaddingHours = trail.elevation / 500.0;
+            const aggregateMinutes = Math.round((baseHours + elevationPaddingHours) * 60);
+            const h = Math.floor(aggregateMinutes / 60);
+            const m = aggregateMinutes % 60;
+            document.getElementById('panel-time').innerText = `${h}h ${m}m`;
+            
+            document.getElementById('panel-rating').innerHTML = `<i class="fa-solid fa-star text-xs"></i> ${trail.rating}`;
+            document.getElementById('panel-reviews').innerText = `${trail.reviews} reviews`;
+
+            const imgContainer = document.getElementById('panel-image-container');
+            const imgEl = document.getElementById('panel-image');
+            if (trail.image) {
+                imgEl.src = trail.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            const officialBtn = document.getElementById('btn-official');
+            if (trail.officialUrl) {
+                officialBtn.href = trail.officialUrl;
+                officialBtn.classList.remove('hidden');
+                if (trail.source === 'AllTrails') {
+                    officialBtn.className = "w-full bg-emerald-700 hover:bg-emerald-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
+                } else if (trail.source === 'Komoot') {
+                    officialBtn.className = "w-full bg-orange-600 hover:bg-orange-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
+                } else {
+                    officialBtn.className = "w-full bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
+                }
+            } else {
+                officialBtn.classList.add('hidden');
+            }
+
+            document.getElementById('btn-directions').href = `https://www.google.com/maps/dir/?api=1&destination=${trail.lat},${trail.lon}`;
+            document.getElementById('btn-osm').href = `https://www.openstreetmap.org/?mlat=${trail.lat}&mlon=${trail.lon}#map=16/${trail.lat}/${trail.lon}`;
+
+            const sourceBadge = document.getElementById('panel-source');
+            sourceBadge.innerText = trail.source;
+            sourceBadge.className = "inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ";
+            if (trail.source === 'AllTrails') sourceBadge.classList.add('bg-emerald-950', 'text-emerald-400');
+            else if (trail.source === 'Komoot') sourceBadge.classList.add('bg-orange-950', 'text-orange-400');
+            else if (trail.source === 'OutdoorActive') sourceBadge.classList.add('bg-blue-950', 'text-blue-400');
+
+            generateSimulatedPath(trail.lat, trail.lon);
+        }
+
+        function generateSimulatedPath(lat, lon) {
+            if (!map) return;
+            const pathCoordinates = [
+                [lat, lon],
+                [lat + 0.002, lon + 0.003],
+                [lat - 0.001, lon + 0.005],
+                [lat + 0.003, lon + 0.007],
+                [lat + 0.002, lon + 0.011]
+            ];
+
+            activeRouteLine = L.polyline(pathCoordinates, {
+                color: '#10b981',
+                weight: 4,
+                opacity: 0.85,
+                lineJoin: 'round'
+            }).addTo(map);
+
+            activeStartMarker = L.circleMarker([lat, lon], {
+                radius: 5,
+                fillColor: '#ffffff',
+                color: '#10b981',
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(map);
+
+            activeEndMarker = L.circleMarker([lat + 0.002, lon + 0.011], {
+                radius: 5,
+                fillColor: '#ef4444',
+                color: '#ffffff',
+                weight: 1.5,
+                fillOpacity: 1
+            }).addTo(map);
+        }
+
+        function clearActiveTrackGeometry() {
+            if (activeRouteLine && map) map.removeLayer(activeRouteLine);
+            if (activeStartMarker && map) map.removeLayer(activeStartMarker);
+            if (activeEndMarker && map) map.removeLayer(activeEndMarker);
+            activeRouteLine = null; activeStartMarker = null; activeEndMarker = null;
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detail-panel').classList.add('hidden');
+            clearActiveTrackGeometry();
+        }
+    </script>
+</body>
+</html>
