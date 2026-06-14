@@ -24,12 +24,7 @@
                 <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                     <i class="fa-solid fa-mountain-signs text-emerald-500"></i>TrailMix
                 </h1>
-                <p class="text-[10px] text-emerald-400 font-semibold tracking-widest uppercase">Trails From Everywhere</p>
-            </div>
-            <div class="flex items-center gap-4 text-xs font-medium md:hidden">
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>AllTrails</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>Komoot</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>OutdoorActive</span>
+                <p class="text-[10px] text-emerald-400 font-semibold tracking-widest uppercase">Real OpenStreetMap Data</p>
             </div>
         </div>
 
@@ -44,11 +39,6 @@
                 <option value="Moderate" selected>Moderate</option>
                 <option value="Hard">Hard</option>
             </select>
-            <select id="filter-activity" class="bg-[#1c2a1b] text-white border border-[#2d442b] rounded px-3 py-1.5 text-sm focus:outline-none cursor-pointer">
-                <option value="Hiking" selected>Hiking</option>
-                <option value="Running">Running</option>
-                <option value="Biking">Biking</option>
-            </select>
             <select id="filter-distance" class="bg-[#1c2a1b] text-white border border-[#2d442b] rounded px-3 py-1.5 text-sm focus:outline-none cursor-pointer">
                 <option value="Any" selected>Any distance</option>
                 <option value="0-5">0 - 5 km</option>
@@ -59,12 +49,6 @@
                 Search
             </button>
         </div>
-
-        <div class="hidden md:flex items-center gap-4 text-xs font-medium">
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>AllTrails</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>Komoot</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>OutdoorActive</span>
-        </div>
     </header>
 
     <div class="flex flex-col md:flex-row flex-1 overflow-hidden relative h-full w-full">
@@ -72,42 +56,17 @@
         <aside class="w-full md:w-[380px] bg-[#18181b] border-r border-gray-800 flex flex-col h-[40vh] md:h-full shrink-0 z-10">
             <div class="p-4 border-b border-gray-800 bg-[#202024]">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium"><span id="trail-count" class="font-bold text-emerald-400">0</span> trails found</span>
+                    <span class="text-sm font-medium"><span id="trail-count" class="font-bold text-emerald-400">0</span> real trails found</span>
                     <select id="sort-select" class="bg-transparent text-gray-400 text-xs focus:outline-none cursor-pointer">
-                        <option value="rated">Top rated</option>
-                        <option value="distance-asc">Shortest</option>
                         <option value="distance-desc">Longest</option>
+                        <option value="distance-asc">Shortest</option>
                     </select>
-                </div>
-                <div class="space-y-1.5 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">AllTrails</span>
-                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
-                            <div id="bar-alltrails" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
-                        </div>
-                        <span id="count-alltrails" class="w-6 text-right font-semibold">0</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">Komoot</span>
-                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
-                            <div id="bar-komoot" class="bg-orange-500 h-full w-0 transition-all duration-500"></div>
-                        </div>
-                        <span id="count-komoot" class="w-6 text-right font-semibold">0</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-24 text-gray-400">OutdoorActive</span>
-                        <div class="flex-1 bg-gray-700 h-2 rounded-full overflow-hidden">
-                            <div id="bar-outdoor" class="bg-blue-500 h-full w-0 transition-all duration-500"></div>
-                        </div>
-                        <span id="count-outdoor" class="w-6 text-right font-semibold">0</span>
-                    </div>
                 </div>
             </div>
 
             <div id="cards-container" class="flex-1 overflow-y-auto p-3 space-y-3 bg-[#131316]">
                 <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
-                    <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
-                    Gathering trail networks...
+                    Hit search to query the live OpenStreetMap database.
                 </div>
             </div>
         </aside>
@@ -124,15 +83,13 @@
                         Clear Pin
                     </button>
                 </div>
-                <p class="text-[11px] text-gray-400 leading-relaxed">Click any blank space on the map to drop an analysis pin and isolate nearby trails.</p>
+                <p class="text-[11px] text-gray-400 leading-relaxed">Click the map to isolate nearby trails.</p>
                 <div class="flex items-center gap-2 mt-1 border-t border-gray-700/60 pt-2">
-                    <label for="radius-select" class="text-[11px] text-gray-300 font-medium whitespace-nowrap">Search Size:</label>
                     <select id="radius-select" class="w-full bg-[#131316] text-white border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none cursor-pointer">
-                        <option value="1000">1 km (2km Diameter)</option>
-                        <option value="3000">3 km (6km Diameter)</option>
-                        <option value="5000" selected>5 km (10km Diameter)</option>
-                        <option value="10000">10 km (20km Diameter)</option>
-                        <option value="15000">15 km (30km Diameter)</option>
+                        <option value="1000">1 km</option>
+                        <option value="3000">3 km</option>
+                        <option value="5000" selected>5 km</option>
+                        <option value="10000">10 km</option>
                     </select>
                 </div>
             </div>
@@ -141,47 +98,42 @@
                 <div class="flex items-start justify-between border-b border-gray-700 pb-2 mb-3">
                     <div>
                         <h2 id="panel-title" class="text-lg font-bold text-white tracking-tight">Trail Name</h2>
-                        <span id="panel-source" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1">Source</span>
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 bg-emerald-950 text-emerald-400 border border-emerald-900">OpenStreetMap</span>
                     </div>
                     <button onclick="closeDetailPanel()" class="text-gray-400 hover:text-white transition-colors p-1">
                         <i class="fa-solid fa-xmark text-lg"></i>
                     </button>
                 </div>
 
-                <div id="panel-image-container" class="w-full h-40 rounded mb-3 overflow-hidden bg-gray-800 relative hidden">
-                    <img id="panel-image" src="" class="w-full h-full object-cover" alt="Scenic trail view">
+                <div class="w-full h-24 rounded mb-3 flex items-center justify-center bg-gray-800 border border-gray-700">
+                    <div class="text-center text-gray-500">
+                        <i class="fa-solid fa-map-location-dot text-2xl mb-1 opacity-50"></i>
+                        <p class="text-[10px] uppercase tracking-wider font-bold">Map Geometry Only</p>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 text-center bg-gray-800/60 p-2 rounded mb-4">
+                <div class="grid grid-cols-3 gap-2 text-center bg-gray-800/60 p-2 rounded mb-4">
                     <div>
                         <div id="panel-dist" class="text-sm font-bold text-white">--</div>
                         <div class="text-[9px] text-gray-400 font-bold uppercase">Distance</div>
                     </div>
                     <div>
                         <div id="panel-elev" class="text-sm font-bold text-white">--</div>
-                        <div class="text-[9px] text-gray-400 font-bold uppercase">Elevation</div>
+                        <div class="text-[9px] text-gray-400 font-bold uppercase">Est. Elev</div>
                     </div>
                     <div>
                         <div id="panel-time" class="text-sm font-bold text-yellow-400">--</div>
                         <div class="text-[9px] text-gray-400 font-bold uppercase">Est. Time</div>
                     </div>
-                    <div>
-                        <div id="panel-rating" class="text-sm font-bold text-orange-400">--</div>
-                        <div id="panel-reviews" class="text-[8px] text-gray-400 uppercase font-bold">--</div>
-                    </div>
                 </div>
-                <div class="flex flex-col gap-2">
-                    <a id="btn-official" target="_blank" rel="noopener noreferrer" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5 hidden">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Official Trail Site
+                
+                <div class="flex gap-2">
+                    <a id="btn-directions" target="_blank" rel="noopener noreferrer" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-location-arrow"></i> Directions
                     </a>
-                    <div class="flex gap-2">
-                        <a id="btn-directions" target="_blank" rel="noopener noreferrer" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-location-arrow"></i> Directions
-                        </a>
-                        <a id="btn-osm" target="_blank" rel="noopener noreferrer" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-map"></i> OSM Map
-                        </a>
-                    </div>
+                    <a id="btn-osm" target="_blank" rel="noopener noreferrer" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-map"></i> View on OSM
+                    </a>
                 </div>
             </div>
         </main>
@@ -193,132 +145,18 @@
         let markersGroup;
         let activeRouteLine = null;
         let activeStartMarker = null;
-        let activeEndMarker = null;
 
         let radiusMarker = null;
         let radiusCircle = null;
         let activeRadiusCenter = null;
 
-        const kotorSeedData = [
-            { 
-                id: 101, 
-                type: "way", 
-                name: "Kotor Fortress Castle Trail (San Giovanni)", 
-                lat: 42.4242, 
-                lon: 18.7725, 
-                distance: 2.5, 
-                elevation: 254, 
-                difficulty: "Moderate", 
-                activity: "Hiking", 
-                source: "AllTrails", 
-                rating: 4.7, 
-                reviews: 1420, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1555992828-ca4dbe41d294?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.alltrails.com/trail/montenegro/kotor/kotor-fortress" 
-            },
-            { 
-                id: 102, 
-                type: "way", 
-                name: "The Ladder of Kotor (Historical Switchbacks)", 
-                lat: 42.4261, 
-                lon: 18.7760, 
-                distance: 6.4, 
-                elevation: 640, 
-                difficulty: "Hard", 
-                activity: "Hiking", 
-                source: "Komoot", 
-                rating: 4.8, 
-                reviews: 588, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.komoot.com/smarttour/14978131" 
-            },
-            { 
-                id: 103, 
-                type: "way", 
-                name: "Fort Vrmac Ridge Panoramic Walk", 
-                lat: 42.4215, 
-                lon: 18.7495, 
-                distance: 11.2, 
-                elevation: 480, 
-                difficulty: "Moderate", 
-                activity: "Hiking", 
-                source: "OutdoorActive", 
-                rating: 4.5, 
-                reviews: 94, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.outdooractive.com/en/route/hiking-route/montenegro/vrmac-ridge-trail/127394921/" 
-            },
-            { 
-                id: 104, 
-                type: "way", 
-                name: "Pestingrad Peak Extreme Crest", 
-                lat: 42.4290, 
-                lon: 18.7890, 
-                distance: 5.8, 
-                elevation: 915, 
-                difficulty: "Hard", 
-                activity: "Hiking", 
-                source: "AllTrails", 
-                rating: 4.9, 
-                reviews: 113, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.alltrails.com/trail/montenegro/kotor/pestingrad" 
-            },
-            { 
-                id: 105, 
-                type: "way", 
-                name: "Gornji Stoliv Old Chestnut Woods Loop", 
-                lat: 42.4610, 
-                lon: 18.7180, 
-                distance: 7.1, 
-                elevation: 390, 
-                difficulty: "Easy", 
-                activity: "Hiking", 
-                source: "Komoot", 
-                rating: 4.3, 
-                reviews: 42, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.komoot.com/guide/37587/hiking-in-kotor" 
-            },
-            { 
-                id: 106, 
-                type: "way", 
-                name: "Perast to Saint John Fortress Ruins", 
-                lat: 42.4868, 
-                lon: 18.6980, 
-                distance: 4.2, 
-                elevation: 295, 
-                difficulty: "Easy", 
-                activity: "Hiking", 
-                source: "OutdoorActive", 
-                rating: 4.6, 
-                reviews: 137, 
-                isMock: true, 
-                image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80", 
-                officialUrl: "https://www.outdooractive.com/en/routes/#q=Kotor" 
-            }
-        ];
-
         window.addEventListener('DOMContentLoaded', () => {
-            try {
-                initMap();
-            } catch (err) {
-                console.error("Map layer failed to boot:", err);
-            }
-            
-            loadPreSeededData();
-
+            initMap();
             document.getElementById('search-btn').addEventListener('click', executeSearch);
             document.getElementById('search-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') executeSearch();
             });
             document.getElementById('filter-difficulty').addEventListener('change', renderUI);
-            document.getElementById('filter-activity').addEventListener('change', renderUI);
             document.getElementById('filter-distance').addEventListener('change', renderUI);
             document.getElementById('sort-select').addEventListener('change', renderUI);
 
@@ -329,6 +167,9 @@
                     renderUI();
                 }
             });
+            
+            // Auto search on load
+            executeSearch();
         });
 
         function initMap() {
@@ -342,11 +183,6 @@
 
             markersGroup = L.layerGroup().addTo(map);
             map.on('click', (e) => handleMapClick(e.latlng));
-        }
-
-        function loadPreSeededData() {
-            allTrails = [...kotorSeedData];
-            renderUI();
         }
 
         function handleMapClick(latlng) {
@@ -403,62 +239,16 @@
             renderUI();
         }
 
-        function buildRelevantImage(name, tags = {}, query = "") {
-            if (tags.image && tags.image.startsWith("http")) {
-                return tags.image;
-            }
-            return "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=500&q=80";
-        }
-
-        function buildOfficialTrailUrl(name, source, query) {
-            const encodedName = encodeURIComponent(name);
-            if (source === "AllTrails") return `https://www.alltrails.com/search?q=${encodedName}`;
-            if (source === "Komoot") return `https://www.komoot.com/search?q=${encodedName}`;
-            if (source === "OutdoorActive") return `https://www.outdooractive.com/en/search/?q=${encodedName}`;
-            return `https://www.google.com/search?q=${encodedName}+trail`;
-        }
-
-        function generateFallbackTrails(lat, lon, locationName) {
-            const sources = ['AllTrails', 'Komoot', 'OutdoorActive'];
-            const nouns = ['Ridge Loop', 'Summit Trail', 'Panoramic Track', 'Valley Path', 'Crest Walk', 'Forest Pass'];
-            const images = [
-                "https://images.unsplash.com/photo-1555992828-ca4dbe41d294?auto=format&fit=crop&w=500&q=80",
-                "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=500&q=80",
-                "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=500&q=80",
-                "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80"
-            ];
-
-            const tracks = [];
-            for (let i = 0; i < 6; i++) {
-                const distance = parseFloat((Math.random() * 9 + 3).toFixed(1));
-                const elevation = Math.floor(distance * (Math.random() * 45 + 30));
-                
-                let difficulty = "Moderate";
-                if (elevation < 250) difficulty = "Easy";
-                if (elevation > 550) difficulty = "Hard";
-
-                const trailName = `${locationName} ${nouns[i % nouns.length]}`;
-                const source = sources[i % sources.length];
-
-                tracks.push({
-                    id: 500 + i,
-                    type: "way",
-                    name: trailName,
-                    lat: lat + (Math.random() - 0.5) * 0.03,
-                    lon: lon + (Math.random() - 0.5) * 0.03,
-                    distance,
-                    elevation,
-                    difficulty,
-                    activity: i % 3 === 0 ? "Running" : (i % 3 === 1 ? "Biking" : "Hiking"),
-                    source: source,
-                    rating: parseFloat((Math.random() * 0.7 + 4.2).toFixed(1)),
-                    reviews: Math.floor(Math.random() * 120 + 15),
-                    image: images[i % images.length],
-                    officialUrl: buildOfficialTrailUrl(trailName, source, locationName),
-                    isMock: true
-                });
-            }
-            return tracks;
+        // Calculate distance between two lat/lon points in km
+        function calcDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
         async function executeSearch() {
@@ -467,85 +257,123 @@
 
             clearRadiusFilter();
             closeDetailPanel();
-            
             if (markersGroup) markersGroup.clearLayers();
 
             const container = document.getElementById('cards-container');
             container.innerHTML = `
                 <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
                     <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
-                    Querying geographical nodes...
+                    Querying OpenStreetMap for real geometry...
                 </div>`;
 
             try {
+                // 1. Get Coordinates
                 const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
                 const geoData = await geoRes.json();
 
                 if (!geoData || geoData.length === 0) {
-                    container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Location target signature unresolvable.</div>`;
+                    container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Location not found. Try a broader search.</div>`;
                     return;
                 }
 
-                const lat = parseFloat(geoData[0].lat);
-                const lon = parseFloat(geoData[0].lon);
-                if (map) map.setView([lat, lon], 12);
+                const searchLat = parseFloat(geoData[0].lat);
+                const searchLon = parseFloat(geoData[0].lon);
+                if (map) map.setView([searchLat, searchLon], 12);
 
-                let osmData = null;
-                try {
-                    const overpassQuery = `[out:json][timeout:12];(way["route"="hiking"](around:15000,${lat},${lon});way["highway"="path"](around:15000,${lat},${lon});relation["route"="hiking"](around:15000,${lat},${lon}););out tags center 40;`;
-                    const overpassRes = await fetch(`https://overpass-api.de/api/interpreter`, {
-                        method: 'POST',
-                        body: overpassQuery
-                    });
-                    if (overpassRes.ok) {
-                        osmData = await overpassRes.json();
-                    }
-                } catch (e) {
-                    console.warn("Public Overpass network congested. Activating sandbox pipeline.", e);
+                // 2. Overpass API Query (out geom returns actual shape!)
+                // We restrict to a 5000m radius and look specifically for designated hiking routes and mountain paths to prevent timeouts.
+                const overpassQuery = `
+                    [out:json][timeout:15];
+                    (
+                      relation["route"="hiking"](around:5000,${searchLat},${searchLon});
+                      way["highway"~"path|track"](around:5000,${searchLat},${searchLon});
+                    );
+                    out geom;
+                `;
+
+                const overpassRes = await fetch(`https://overpass-api.de/api/interpreter`, {
+                    method: 'POST',
+                    body: overpassQuery
+                });
+
+                if (!overpassRes.ok) {
+                    throw new Error("Overpass API busy");
                 }
 
+                const osmData = await overpassRes.json();
+
                 if (osmData && osmData.elements && osmData.elements.length > 0) {
-                    const sources = ['AllTrails', 'Komoot', 'OutdoorActive'];
-                    allTrails = osmData.elements
-                        .filter(el => el.tags)
-                        .map((el, index) => {
-                            const tags = el.tags || {};
-                            const name = tags.name || tags.ref || tags.description || `Trail Route #${String(el.id).slice(-4)}`;
-                            const assignedSource = sources[index % sources.length];
-                            const distance = parseFloat((Math.random() * 10 + 2).toFixed(1));
-                            const elevation = tags.ele ? parseInt(tags.ele, 10) : Math.floor(distance * (Math.random() * 50 + 25));
+                    allTrails = [];
+                    
+                    osmData.elements.forEach((el) => {
+                        const tags = el.tags || {};
+                        const name = tags.name || tags.ref || tags.description;
+                        
+                        // Only add if it has a name and geometry
+                        if (name && (el.geometry || (el.members && el.members[0].geometry))) {
+                            
+                            // Extract REAL geometry coordinates
+                            let coords = [];
+                            if (el.geometry) {
+                                coords = el.geometry.map(pt => [pt.lat, pt.lon]);
+                            } else if (el.members) {
+                                // For relations, extract geometry from the first few members to build the line
+                                el.members.forEach(member => {
+                                    if (member.geometry) {
+                                        coords = coords.concat(member.geometry.map(pt => [pt.lat, pt.lon]));
+                                    }
+                                });
+                            }
 
-                            let difficulty = "Moderate";
-                            if (elevation < 200) difficulty = "Easy";
-                            if (elevation > 600) difficulty = "Hard";
+                            if (coords.length > 0) {
+                                // Calculate actual distance of the line
+                                let totalDist = 0;
+                                for(let i = 0; i < coords.length - 1; i++) {
+                                    totalDist += calcDistance(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
+                                }
 
-                            return {
-                                id: el.id,
-                                type: el.type,
-                                name,
-                                lat: el.center?.lat || el.lat || lat,
-                                lon: el.center?.lon || el.lon || lon,
-                                distance,
-                                elevation,
-                                difficulty,
-                                activity: "Hiking",
-                                source: assignedSource,
-                                rating: parseFloat((Math.random() * 0.9 + 4.0).toFixed(1)),
-                                reviews: Math.floor(Math.random() * 180 + 12),
-                                image: buildRelevantImage(name, tags, query),
-                                officialUrl: buildOfficialTrailUrl(name, assignedSource, query),
-                                isMock: false
-                            };
-                        });
+                                // Estimate elevation (OSM often lacks this, so we assign a baseline based on length)
+                                const elevation = tags.ele ? parseInt(tags.ele, 10) : Math.floor(totalDist * 45);
+                                
+                                let difficulty = "Moderate";
+                                if (totalDist < 3) difficulty = "Easy";
+                                if (totalDist > 10 || elevation > 500) difficulty = "Hard";
+
+                                allTrails.push({
+                                    id: el.id,
+                                    type: el.type,
+                                    name: name,
+                                    lat: coords[0][0], // Start lat
+                                    lon: coords[0][1], // Start lon
+                                    geometry: coords,  // Store real geometry!
+                                    distance: parseFloat(totalDist.toFixed(1)),
+                                    elevation: elevation,
+                                    difficulty: difficulty
+                                });
+                            }
+                        }
+                    });
+
+                    // Remove duplicates by name
+                    allTrails = allTrails.filter((trail, index, self) =>
+                        index === self.findIndex((t) => (
+                            t.name === trail.name
+                        ))
+                    );
+
                 } else {
-                    allTrails = generateFallbackTrails(lat, lon, query);
+                    allTrails = [];
                 }
 
                 renderUI();
 
             } catch (err) {
                 console.error(err);
-                container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Network pipeline lookup stalled.</div>`;
+                container.innerHTML = `
+                <div class="text-center p-4">
+                    <p class="text-red-400 text-sm font-bold mb-2">The public mapping server is busy.</p>
+                    <p class="text-gray-400 text-xs">OpenStreetMap occasionally drops requests when too many people are using it. Please wait 10 seconds and hit search again.</p>
+                </div>`;
             }
         }
 
@@ -555,210 +383,5 @@
             container.innerHTML = '';
 
             const difficultyFilter = document.getElementById('filter-difficulty').value;
-            const activityFilter = document.getElementById('filter-activity').value;
             const distanceFilter = document.getElementById('filter-distance').value;
-            const sortOrder = document.getElementById('sort-select').value;
-            const maxRadiusMeters = parseInt(document.getElementById('radius-select').value);
-
-            let filtered = allTrails.filter(t => {
-                if (difficultyFilter !== 'Any' && t.difficulty !== difficultyFilter) return false;
-                if (activityFilter !== 'Any' && t.activity !== activityFilter) return false;
-                
-                if (distanceFilter !== 'Any') {
-                    if (distanceFilter === '0-5' && t.distance > 5) return false;
-                    if (distanceFilter === '5-12' && (t.distance < 5 || t.distance > 12)) return false;
-                    if (distanceFilter === '12+' && t.distance <= 12) return false;
-                }
-
-                if (activeRadiusCenter && map) {
-                    const trailPoint = L.latLng(t.lat, t.lon);
-                    const distanceMeters = map.distance(activeRadiusCenter, trailPoint);
-                    if (distanceMeters > maxRadiusMeters) return false;
-                }
-
-                return true;
-            });
-
-            if (sortOrder === 'rated') filtered.sort((a, b) => b.rating - a.rating);
-            else if (sortOrder === 'distance-asc') filtered.sort((a, b) => a.distance - b.distance);
-            else if (sortOrder === 'distance-desc') filtered.sort((a, b) => b.distance - a.distance);
-
-            document.getElementById('trail-count').innerText = filtered.length;
-            
-            const counts = { AllTrails: 0, Komoot: 0, OutdoorActive: 0 };
-            filtered.forEach(t => counts[t.source]++);
-
-            document.getElementById('count-alltrails').innerText = counts.AllTrails;
-            document.getElementById('count-komoot').innerText = counts.Komoot;
-            document.getElementById('count-outdoor').innerText = counts.OutdoorActive;
-
-            const total = filtered.length || 1;
-            document.getElementById('bar-alltrails').style.width = `${(counts.AllTrails / total) * 100}%`;
-            document.getElementById('bar-komoot').style.width = `${(counts.Komoot / total) * 100}%`;
-            document.getElementById('bar-outdoor').style.width = `${(counts.OutdoorActive / total) * 100}%`;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-500 pt-8 text-xs">No trails match those parameters.</div>`;
-                return;
-            }
-
-            filtered.forEach(trail => {
-                let colorClass = 'bg-emerald-600';
-                if (trail.source === 'Komoot') colorClass = 'bg-orange-500';
-                if (trail.source === 'OutdoorActive') colorClass = 'bg-blue-600';
-
-                if (markersGroup) {
-                    const markerIcon = L.divIcon({
-                        className: 'custom-trail-marker',
-                        html: `<div class="${colorClass} w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-xl hover:scale-110 transition-transform text-white text-xs"><i class="fa-solid fa-shoe-prints -rotate-45"></i></div>`,
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 16]
-                    });
-
-                    const marker = L.marker([trail.lat, trail.lon], { icon: markerIcon }).addTo(markersGroup);
-                    marker.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e); 
-                        selectTrail(trail);
-                    });
-                }
-
-                let sourceBadgeColor = 'text-emerald-400 bg-emerald-950/50 border border-emerald-900';
-                if (trail.source === 'Komoot') sourceBadgeColor = 'text-orange-400 bg-orange-950/50 border border-orange-900';
-                if (trail.source === 'OutdoorActive') sourceBadgeColor = 'text-blue-400 bg-blue-950/50 border border-blue-900';
-
-                const card = document.createElement('div');
-                card.className = `p-3 bg-[#1e1e22] hover:bg-[#25252a] rounded border border-gray-800 transition-all cursor-pointer relative group flex flex-col justify-between min-h-[110px]`;
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start gap-2 mb-1">
-                            <h3 class="font-bold text-sm text-gray-200 group-hover:text-white line-clamp-1">${trail.name}</h3>
-                            <span class="text-[9px] uppercase font-bold tracking-wider text-gray-400 shrink-0 px-1 rounded bg-gray-800">${trail.difficulty}</span>
-                        </div>
-                        <p class="text-xs text-gray-400 flex items-center gap-1 mb-2"><i class="fa-solid fa-location-dot text-gray-500"></i> Local Route Point</p>
-                        <div class="flex items-center gap-3 text-[11px] text-gray-300 font-medium">
-                            <span class="flex items-center gap-1 text-gray-400"><i class="fa-solid fa-ruler-horizontal text-[10px]"></i> <b class="text-gray-200">${trail.distance} km</b></span>
-                            <span class="flex items-center gap-1 text-gray-400"><i class="fa-solid fa-arrow-trend-up text-[10px]"></i> <b class="text-gray-200">${trail.elevation} m</b></span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-800/60">
-                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded ${sourceBadgeColor}">${trail.source}</span>
-                        <span class="text-[11px] text-orange-400 font-bold flex items-center gap-0.5">
-                            <i class="fa-solid fa-star text-[10px]"></i> ${trail.rating}
-                            <span class="text-gray-500 font-normal text-[10px]">(${trail.reviews})</span>
-                        </span>
-                    </div>
-                `;
-                card.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (map) map.flyTo([trail.lat, trail.lon], 14);
-                    selectTrail(trail);
-                });
-                container.appendChild(card);
-            });
-        }
-
-        async function selectTrail(trail) {
-            clearActiveTrackGeometry();
-
-            const panel = document.getElementById('detail-panel');
-            panel.classList.remove('hidden');
-
-            document.getElementById('panel-title').innerText = trail.name;
-            document.getElementById('panel-dist').innerText = `${trail.distance} km`;
-            document.getElementById('panel-elev').innerText = `${trail.elevation} m`;
-            
-            const baseHours = trail.distance / 4.2;
-            const elevationPaddingHours = trail.elevation / 500.0;
-            const aggregateMinutes = Math.round((baseHours + elevationPaddingHours) * 60);
-            const h = Math.floor(aggregateMinutes / 60);
-            const m = aggregateMinutes % 60;
-            document.getElementById('panel-time').innerText = `${h}h ${m}m`;
-            
-            document.getElementById('panel-rating').innerHTML = `<i class="fa-solid fa-star text-xs"></i> ${trail.rating}`;
-            document.getElementById('panel-reviews').innerText = `${trail.reviews} reviews`;
-
-            const imgContainer = document.getElementById('panel-image-container');
-            const imgEl = document.getElementById('panel-image');
-            if (trail.image) {
-                imgEl.src = trail.image;
-                imgContainer.classList.remove('hidden');
-            } else {
-                imgContainer.classList.add('hidden');
-            }
-
-            const officialBtn = document.getElementById('btn-official');
-            if (trail.officialUrl) {
-                officialBtn.href = trail.officialUrl;
-                officialBtn.classList.remove('hidden');
-                if (trail.source === 'AllTrails') {
-                    officialBtn.className = "w-full bg-emerald-700 hover:bg-emerald-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
-                } else if (trail.source === 'Komoot') {
-                    officialBtn.className = "w-full bg-orange-600 hover:bg-orange-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
-                } else {
-                    officialBtn.className = "w-full bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5";
-                }
-            } else {
-                officialBtn.classList.add('hidden');
-            }
-
-            document.getElementById('btn-directions').href = `https://www.google.com/maps/dir/?api=1&destination=${trail.lat},${trail.lon}`;
-            document.getElementById('btn-osm').href = `https://www.openstreetmap.org/?mlat=${trail.lat}&mlon=${trail.lon}#map=16/${trail.lat}/${trail.lon}`;
-
-            const sourceBadge = document.getElementById('panel-source');
-            sourceBadge.innerText = trail.source;
-            sourceBadge.className = "inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ";
-            if (trail.source === 'AllTrails') sourceBadge.classList.add('bg-emerald-950', 'text-emerald-400');
-            else if (trail.source === 'Komoot') sourceBadge.classList.add('bg-orange-950', 'text-orange-400');
-            else if (trail.source === 'OutdoorActive') sourceBadge.classList.add('bg-blue-950', 'text-blue-400');
-
-            generateSimulatedPath(trail.lat, trail.lon);
-        }
-
-        function generateSimulatedPath(lat, lon) {
-            if (!map) return;
-            const pathCoordinates = [
-                [lat, lon],
-                [lat + 0.002, lon + 0.003],
-                [lat - 0.001, lon + 0.005],
-                [lat + 0.003, lon + 0.007],
-                [lat + 0.002, lon + 0.011]
-            ];
-
-            activeRouteLine = L.polyline(pathCoordinates, {
-                color: '#10b981',
-                weight: 4,
-                opacity: 0.85,
-                lineJoin: 'round'
-            }).addTo(map);
-
-            activeStartMarker = L.circleMarker([lat, lon], {
-                radius: 5,
-                fillColor: '#ffffff',
-                color: '#10b981',
-                weight: 2,
-                fillOpacity: 1
-            }).addTo(map);
-
-            activeEndMarker = L.circleMarker([lat + 0.002, lon + 0.011], {
-                radius: 5,
-                fillColor: '#ef4444',
-                color: '#ffffff',
-                weight: 1.5,
-                fillOpacity: 1
-            }).addTo(map);
-        }
-
-        function clearActiveTrackGeometry() {
-            if (activeRouteLine && map) map.removeLayer(activeRouteLine);
-            if (activeStartMarker && map) map.removeLayer(activeStartMarker);
-            if (activeEndMarker && map) map.removeLayer(activeEndMarker);
-            activeRouteLine = null; activeStartMarker = null; activeEndMarker = null;
-        }
-
-        function closeDetailPanel() {
-            document.getElementById('detail-panel').classList.add('hidden');
-            clearActiveTrackGeometry();
-        }
-    </script>
-</body>
-</html>
+            const sortOrder = document.getElementById
