@@ -18,7 +18,7 @@
 </head>
 <body class="bg-[#111827] text-white font-sans h-screen flex flex-col overflow-hidden">
 
-    <header class="bg-[#142313] border-b border-[#233821] px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+    <header class="bg-[#142313] border-b border-[#233821] px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 z-20 relative shadow-md">
         <div class="flex items-center justify-between w-full md:w-auto">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -51,11 +51,11 @@
         </div>
     </header>
 
-    <div class="flex flex-col md:flex-row flex-1 overflow-hidden relative h-full w-full">
+    <div class="flex flex-col md:flex-row flex-1 relative w-full h-full overflow-hidden">
 
-        <aside class="w-full md:w-[380px] bg-[#18181b] border-r border-gray-800 flex flex-col h-[40vh] md:h-full shrink-0 z-10">
-            <div class="p-4 border-b border-gray-800 bg-[#202024]">
-                <div class="flex items-center justify-between mb-3">
+        <aside class="w-full md:w-[380px] h-[40vh] md:h-full shrink-0 z-10 flex flex-col bg-[#18181b] border-r border-gray-800 shadow-xl relative">
+            <div class="p-4 border-b border-gray-800 bg-[#202024] shrink-0">
+                <div class="flex items-center justify-between">
                     <span class="text-sm font-medium"><span id="trail-count" class="font-bold text-emerald-400">0</span> real trails found</span>
                     <select id="sort-select" class="bg-transparent text-gray-400 text-xs focus:outline-none cursor-pointer">
                         <option value="distance-desc">Longest</option>
@@ -66,13 +66,14 @@
 
             <div id="cards-container" class="flex-1 overflow-y-auto p-3 space-y-3 bg-[#131316]">
                 <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
-                    Hit search to query the live OpenStreetMap database.
+                    <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
+                    Booting map system...
                 </div>
             </div>
         </aside>
 
-        <main class="flex-1 h-full relative bg-gray-900">
-            <div id="map" class="w-full h-full min-h-[200px]"></div>
+        <main class="flex-1 relative w-full h-full z-0 bg-gray-900">
+            <div id="map" class="absolute inset-0 z-0"></div>
 
             <div id="radius-tool-panel" class="absolute bottom-4 left-4 z-[1000] w-[260px] bg-[#1f2937]/90 backdrop-blur border border-gray-700 rounded-lg p-3 shadow-xl flex flex-col gap-2">
                 <div class="flex items-center justify-between">
@@ -168,11 +169,17 @@
                 }
             });
             
-            // Auto search on load
-            executeSearch();
+            // Allow layout to settle before initial search
+            setTimeout(() => {
+                executeSearch();
+            }, 300);
         });
 
         function initMap() {
+            // Check if map container exists and is clean
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) return;
+
             map = L.map('map', { zoomControl: false }).setView([42.435, 18.755], 13);
             L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -183,6 +190,14 @@
 
             markersGroup = L.layerGroup().addTo(map);
             map.on('click', (e) => handleMapClick(e.latlng));
+
+            // CRITICAL FIX: Force Leaflet to recalculate container size
+            setTimeout(() => { map.invalidateSize(); }, 250);
+            
+            // Fix resizing bugs on browser window change
+            window.addEventListener('resize', () => {
+                if (map) map.invalidateSize();
+            });
         }
 
         function handleMapClick(latlng) {
@@ -239,7 +254,6 @@
             renderUI();
         }
 
-        // Calculate distance between two lat/lon points in km
         function calcDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -267,8 +281,7 @@
                 </div>`;
 
             try {
-                // 1. Get Coordinates
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
                 const geoData = await geoRes.json();
 
                 if (!geoData || geoData.length === 0) {
@@ -278,10 +291,12 @@
 
                 const searchLat = parseFloat(geoData[0].lat);
                 const searchLon = parseFloat(geoData[0].lon);
-                if (map) map.setView([searchLat, searchLon], 12);
+                
+                if (map) {
+                    map.setView([searchLat, searchLon], 12);
+                    map.invalidateSize();
+                }
 
-                // 2. Overpass API Query (out geom returns actual shape!)
-                // We restrict to a 5000m radius and look specifically for designated hiking routes and mountain paths to prevent timeouts.
                 const overpassQuery = `
                     [out:json][timeout:15];
                     (
@@ -296,9 +311,7 @@
                     body: overpassQuery
                 });
 
-                if (!overpassRes.ok) {
-                    throw new Error("Overpass API busy");
-                }
+                if (!overpassRes.ok) throw new Error("Overpass API busy");
 
                 const osmData = await overpassRes.json();
 
@@ -309,15 +322,11 @@
                         const tags = el.tags || {};
                         const name = tags.name || tags.ref || tags.description;
                         
-                        // Only add if it has a name and geometry
-                        if (name && (el.geometry || (el.members && el.members[0].geometry))) {
-                            
-                            // Extract REAL geometry coordinates
+                        if (name && (el.geometry || (el.members && el.members[0] && el.members[0].geometry))) {
                             let coords = [];
                             if (el.geometry) {
                                 coords = el.geometry.map(pt => [pt.lat, pt.lon]);
                             } else if (el.members) {
-                                // For relations, extract geometry from the first few members to build the line
                                 el.members.forEach(member => {
                                     if (member.geometry) {
                                         coords = coords.concat(member.geometry.map(pt => [pt.lat, pt.lon]));
@@ -326,13 +335,11 @@
                             }
 
                             if (coords.length > 0) {
-                                // Calculate actual distance of the line
                                 let totalDist = 0;
                                 for(let i = 0; i < coords.length - 1; i++) {
                                     totalDist += calcDistance(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
                                 }
 
-                                // Estimate elevation (OSM often lacks this, so we assign a baseline based on length)
                                 const elevation = tags.ele ? parseInt(tags.ele, 10) : Math.floor(totalDist * 45);
                                 
                                 let difficulty = "Moderate";
@@ -343,9 +350,9 @@
                                     id: el.id,
                                     type: el.type,
                                     name: name,
-                                    lat: coords[0][0], // Start lat
-                                    lon: coords[0][1], // Start lon
-                                    geometry: coords,  // Store real geometry!
+                                    lat: coords[0][0], 
+                                    lon: coords[0][1], 
+                                    geometry: coords,  
                                     distance: parseFloat(totalDist.toFixed(1)),
                                     elevation: elevation,
                                     difficulty: difficulty
@@ -354,11 +361,8 @@
                         }
                     });
 
-                    // Remove duplicates by name
                     allTrails = allTrails.filter((trail, index, self) =>
-                        index === self.findIndex((t) => (
-                            t.name === trail.name
-                        ))
+                        index === self.findIndex((t) => (t.name === trail.name))
                     );
 
                 } else {
@@ -384,4 +388,10 @@
 
             const difficultyFilter = document.getElementById('filter-difficulty').value;
             const distanceFilter = document.getElementById('filter-distance').value;
-            const sortOrder = document.getElementById
+            const sortOrder = document.getElementById('sort-select').value;
+            const maxRadiusMeters = parseInt(document.getElementById('radius-select').value);
+
+            let filtered = allTrails.filter(t => {
+                if (difficultyFilter !== 'Any' && t.difficulty !== difficultyFilter) return false;
+                
+                if
