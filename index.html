@@ -3,395 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrailMix - Trails From Everywhere</title>
+    <title>TrailMix - Verified Trails</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1f2937; color: white; }
+        /* Force the map to fill the container, ensuring it renders even if Flexbox is delayed */
+        #map { height: 100vh; width: 100%; }
+        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        .sidebar { height: 100vh; overflow-y: auto; }
     </style>
 </head>
-<body class="bg-[#111827] text-white font-sans h-screen flex flex-col overflow-hidden">
+<body class="flex flex-row bg-gray-900 text-white">
 
-    <header class="bg-[#142313] border-b border-[#233821] px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 z-20 relative shadow-md">
-        <div class="flex items-center justify-between w-full md:w-auto">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <i class="fa-solid fa-mountain-signs text-emerald-500"></i>TrailMix
-                </h1>
-                <p class="text-[10px] text-emerald-400 font-semibold tracking-widest uppercase">Real OpenStreetMap Data</p>
-            </div>
+    <aside class="w-[350px] bg-[#111827] border-r border-gray-700 p-4 flex flex-col z-20 sidebar">
+        <h1 class="text-xl font-bold mb-4 text-emerald-400">TrailMix</h1>
+        <div class="flex gap-2 mb-4">
+            <input id="search-input" type="text" value="Kotor" class="bg-gray-800 text-white border border-gray-700 rounded px-3 py-2 text-sm w-full">
+            <button id="search-btn" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-sm font-bold">Go</button>
         </div>
-
-        <div class="flex flex-wrap items-center gap-2 flex-1 max-w-4xl justify-end">
-            <div class="relative flex-1 min-w-[200px]">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input id="search-input" type="text" value="Kotor Bay" class="w-full bg-[#1c2a1b] text-white border border-[#2d442b] rounded px-9 py-1.5 text-sm focus:outline-none focus:border-emerald-500" placeholder="Search location...">
-            </div>
-            <select id="filter-difficulty" class="bg-[#1c2a1b] text-white border border-[#2d442b] rounded px-3 py-1.5 text-sm focus:outline-none cursor-pointer">
-                <option value="Any">Any Difficulty</option>
-                <option value="Easy">Easy</option>
-                <option value="Moderate" selected>Moderate</option>
-                <option value="Hard">Hard</option>
-            </select>
-            <select id="filter-distance" class="bg-[#1c2a1b] text-white border border-[#2d442b] rounded px-3 py-1.5 text-sm focus:outline-none cursor-pointer">
-                <option value="Any" selected>Any distance</option>
-                <option value="0-5">0 - 5 km</option>
-                <option value="5-12">5 - 12 km</option>
-                <option value="12+">12+ km</option>
-            </select>
-            <button id="search-btn" class="bg-[#2e6f40] hover:bg-[#3b874f] text-white text-sm font-semibold px-5 py-1.5 rounded transition-colors shadow">
-                Search
-            </button>
+        <div id="results" class="space-y-2">
+            <p class="text-gray-400 text-sm italic">Enter a location to find trails.</p>
         </div>
-    </header>
+    </aside>
 
-    <div class="flex flex-col md:flex-row flex-1 relative w-full h-full overflow-hidden">
-
-        <aside class="w-full md:w-[380px] h-[40vh] md:h-full shrink-0 z-10 flex flex-col bg-[#18181b] border-r border-gray-800 shadow-xl relative">
-            <div class="p-4 border-b border-gray-800 bg-[#202024] shrink-0">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium"><span id="trail-count" class="font-bold text-emerald-400">0</span> real trails found</span>
-                    <select id="sort-select" class="bg-transparent text-gray-400 text-xs focus:outline-none cursor-pointer">
-                        <option value="distance-desc">Longest</option>
-                        <option value="distance-asc">Shortest</option>
-                    </select>
-                </div>
-            </div>
-
-            <div id="cards-container" class="flex-1 overflow-y-auto p-3 space-y-3 bg-[#131316]">
-                <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
-                    <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
-                    Booting map system...
-                </div>
-            </div>
-        </aside>
-
-        <main class="flex-1 relative w-full h-full z-0 bg-gray-900">
-            <div id="map" class="absolute inset-0 z-0"></div>
-
-            <div id="radius-tool-panel" class="absolute bottom-4 left-4 z-[1000] w-[260px] bg-[#1f2937]/90 backdrop-blur border border-gray-700 rounded-lg p-3 shadow-xl flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-dot"></i> Radius Pin Filter
-                    </span>
-                    <button id="clear-radius-btn" class="text-red-400 hover:text-red-300 text-[11px] font-bold hidden transition-colors">
-                        Clear Pin
-                    </button>
-                </div>
-                <p class="text-[11px] text-gray-400 leading-relaxed">Click the map to isolate nearby trails.</p>
-                <div class="flex items-center gap-2 mt-1 border-t border-gray-700/60 pt-2">
-                    <select id="radius-select" class="w-full bg-[#131316] text-white border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none cursor-pointer">
-                        <option value="1000">1 km</option>
-                        <option value="3000">3 km</option>
-                        <option value="5000" selected>5 km</option>
-                        <option value="10000">10 km</option>
-                    </select>
-                </div>
-            </div>
-
-            <div id="detail-panel" class="absolute top-4 left-4 z-[1000] w-[calc(100%-32px)] sm:w-[360px] bg-[#1f2937]/95 backdrop-blur border border-gray-700 rounded-lg shadow-2xl p-4 hidden transition-all">
-                <div class="flex items-start justify-between border-b border-gray-700 pb-2 mb-3">
-                    <div>
-                        <h2 id="panel-title" class="text-lg font-bold text-white tracking-tight">Trail Name</h2>
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 bg-emerald-950 text-emerald-400 border border-emerald-900">OpenStreetMap</span>
-                    </div>
-                    <button onclick="closeDetailPanel()" class="text-gray-400 hover:text-white transition-colors p-1">
-                        <i class="fa-solid fa-xmark text-lg"></i>
-                    </button>
-                </div>
-
-                <div class="w-full h-24 rounded mb-3 flex items-center justify-center bg-gray-800 border border-gray-700">
-                    <div class="text-center text-gray-500">
-                        <i class="fa-solid fa-map-location-dot text-2xl mb-1 opacity-50"></i>
-                        <p class="text-[10px] uppercase tracking-wider font-bold">Map Geometry Only</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 text-center bg-gray-800/60 p-2 rounded mb-4">
-                    <div>
-                        <div id="panel-dist" class="text-sm font-bold text-white">--</div>
-                        <div class="text-[9px] text-gray-400 font-bold uppercase">Distance</div>
-                    </div>
-                    <div>
-                        <div id="panel-elev" class="text-sm font-bold text-white">--</div>
-                        <div class="text-[9px] text-gray-400 font-bold uppercase">Est. Elev</div>
-                    </div>
-                    <div>
-                        <div id="panel-time" class="text-sm font-bold text-yellow-400">--</div>
-                        <div class="text-[9px] text-gray-400 font-bold uppercase">Est. Time</div>
-                    </div>
-                </div>
-                
-                <div class="flex gap-2">
-                    <a id="btn-directions" target="_blank" rel="noopener noreferrer" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-location-arrow"></i> Directions
-                    </a>
-                    <a id="btn-osm" target="_blank" rel="noopener noreferrer" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-center font-bold text-xs py-2 rounded shadow transition-colors flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-map"></i> View on OSM
-                    </a>
-                </div>
-            </div>
-        </main>
-    </div>
+    <main class="flex-1 relative">
+        <div id="map"></div>
+    </main>
 
     <script>
         let map;
-        let allTrails = [];
-        let markersGroup;
-        let activeRouteLine = null;
-        let activeStartMarker = null;
+        let trailLayer;
 
-        let radiusMarker = null;
-        let radiusCircle = null;
-        let activeRadiusCenter = null;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initMap();
-            document.getElementById('search-btn').addEventListener('click', executeSearch);
-            document.getElementById('search-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') executeSearch();
-            });
-            document.getElementById('filter-difficulty').addEventListener('change', renderUI);
-            document.getElementById('filter-distance').addEventListener('change', renderUI);
-            document.getElementById('sort-select').addEventListener('change', renderUI);
-
-            document.getElementById('clear-radius-btn').addEventListener('click', clearRadiusFilter);
-            document.getElementById('radius-select').addEventListener('change', () => {
-                if (activeRadiusCenter) {
-                    updateRadiusCircle();
-                    renderUI();
-                }
-            });
-            
-            // Allow layout to settle before initial search
-            setTimeout(() => {
-                executeSearch();
-            }, 300);
-        });
-
+        // 1. Initialize Map immediately when the script runs
         function initMap() {
-            // Check if map container exists and is clean
-            const mapContainer = document.getElementById('map');
-            if (!mapContainer) return;
-
-            map = L.map('map', { zoomControl: false }).setView([42.435, 18.755], 13);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-
+            map = L.map('map').setView([42.435, 18.755], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap contributors'
+                attribution: '© OpenStreetMap'
             }).addTo(map);
-
-            markersGroup = L.layerGroup().addTo(map);
-            map.on('click', (e) => handleMapClick(e.latlng));
-
-            // CRITICAL FIX: Force Leaflet to recalculate container size
-            setTimeout(() => { map.invalidateSize(); }, 250);
-            
-            // Fix resizing bugs on browser window change
-            window.addEventListener('resize', () => {
-                if (map) map.invalidateSize();
-            });
+            trailLayer = L.layerGroup().addTo(map);
         }
 
-        function handleMapClick(latlng) {
-            if (!map) return;
-            activeRadiusCenter = latlng;
-
-            if (radiusMarker) {
-                radiusMarker.setLatLng(latlng);
-            } else {
-                const pinIcon = L.divIcon({
-                    className: 'radius-pin-marker',
-                    html: `<div class="bg-red-500 w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-2xl scale-110 text-white text-xs"><i class="fa-solid fa-location-crosshairs"></i></div>`,
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 14]
-                });
-                radiusMarker = L.marker(latlng, { icon: pinIcon }).addTo(map);
-            }
-
-            updateRadiusCircle();
-            document.getElementById('clear-radius-btn').classList.remove('hidden');
-            renderUI();
-        }
-
-        function updateRadiusCircle() {
-            if (!activeRadiusCenter || !map) return;
-            const radiusMeters = parseInt(document.getElementById('radius-select').value);
-
-            if (radiusCircle) {
-                radiusCircle.setLatLng(activeRadiusCenter);
-                radiusCircle.setRadius(radiusMeters);
-            } else {
-                radiusCircle = L.circle(activeRadiusCenter, {
-                    radius: radiusMeters,
-                    color: '#ef4444',
-                    fillColor: '#ef4444',
-                    fillOpacity: 0.12,
-                    weight: 2,
-                    dashArray: '5, 5',
-                    interactive: false
-                }).addTo(map);
-            }
-        }
-
-        function clearRadiusFilter(e) {
-            if (e) e.stopPropagation(); 
-            if (radiusMarker && map) map.removeLayer(radiusMarker);
-            if (radiusCircle && map) map.removeLayer(radiusCircle);
-            
-            radiusMarker = null;
-            radiusCircle = null;
-            activeRadiusCenter = null;
-            
-            document.getElementById('clear-radius-btn').classList.add('hidden');
-            renderUI();
-        }
-
-        function calcDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        async function executeSearch() {
-            const query = document.getElementById('search-input').value.trim();
-            if (!query) return;
-
-            clearRadiusFilter();
-            closeDetailPanel();
-            if (markersGroup) markersGroup.clearLayers();
-
-            const container = document.getElementById('cards-container');
-            container.innerHTML = `
-                <div class="text-center text-gray-500 pt-8 text-sm flex flex-col items-center gap-2">
-                    <i class="fa-solid fa-spinner animate-spin text-xl text-emerald-500"></i>
-                    Querying OpenStreetMap for real geometry...
-                </div>`;
+        // 2. Search Function
+        async function performSearch() {
+            const query = document.getElementById('search-input').value;
+            const resDiv = document.getElementById('results');
+            resDiv.innerHTML = "Searching...";
 
             try {
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
-                const geoData = await geoRes.json();
+                // Get Coordinates
+                const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+                const geoData = await geo.json();
+                if (!geoData.length) throw new Error("Location not found");
 
-                if (!geoData || geoData.length === 0) {
-                    container.innerHTML = `<div class="text-center text-red-400 p-4 text-xs">Location not found. Try a broader search.</div>`;
-                    return;
-                }
+                const { lat, lon } = geoData[0];
+                map.setView([lat, lon], 13);
 
-                const searchLat = parseFloat(geoData[0].lat);
-                const searchLon = parseFloat(geoData[0].lon);
-                
-                if (map) {
-                    map.setView([searchLat, searchLon], 12);
-                    map.invalidateSize();
-                }
+                // Get Trails
+                const overpass = `[out:json][timeout:25];(relation["route"="hiking"](around:5000,${lat},${lon});way["highway"~"path|track"](around:5000,${lat},${lon}););out geom;`;
+                const osm = await fetch(`https://overpass-api.de/api/interpreter`, { method: 'POST', body: overpass });
+                const osmData = await osm.json();
 
-                const overpassQuery = `
-                    [out:json][timeout:15];
-                    (
-                      relation["route"="hiking"](around:5000,${searchLat},${searchLon});
-                      way["highway"~"path|track"](around:5000,${searchLat},${searchLon});
-                    );
-                    out geom;
-                `;
-
-                const overpassRes = await fetch(`https://overpass-api.de/api/interpreter`, {
-                    method: 'POST',
-                    body: overpassQuery
-                });
-
-                if (!overpassRes.ok) throw new Error("Overpass API busy");
-
-                const osmData = await overpassRes.json();
-
-                if (osmData && osmData.elements && osmData.elements.length > 0) {
-                    allTrails = [];
-                    
-                    osmData.elements.forEach((el) => {
-                        const tags = el.tags || {};
-                        const name = tags.name || tags.ref || tags.description;
-                        
-                        if (name && (el.geometry || (el.members && el.members[0] && el.members[0].geometry))) {
-                            let coords = [];
-                            if (el.geometry) {
-                                coords = el.geometry.map(pt => [pt.lat, pt.lon]);
-                            } else if (el.members) {
-                                el.members.forEach(member => {
-                                    if (member.geometry) {
-                                        coords = coords.concat(member.geometry.map(pt => [pt.lat, pt.lon]));
-                                    }
-                                });
-                            }
-
-                            if (coords.length > 0) {
-                                let totalDist = 0;
-                                for(let i = 0; i < coords.length - 1; i++) {
-                                    totalDist += calcDistance(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1]);
-                                }
-
-                                const elevation = tags.ele ? parseInt(tags.ele, 10) : Math.floor(totalDist * 45);
-                                
-                                let difficulty = "Moderate";
-                                if (totalDist < 3) difficulty = "Easy";
-                                if (totalDist > 10 || elevation > 500) difficulty = "Hard";
-
-                                allTrails.push({
-                                    id: el.id,
-                                    type: el.type,
-                                    name: name,
-                                    lat: coords[0][0], 
-                                    lon: coords[0][1], 
-                                    geometry: coords,  
-                                    distance: parseFloat(totalDist.toFixed(1)),
-                                    elevation: elevation,
-                                    difficulty: difficulty
-                                });
-                            }
-                        }
-                    });
-
-                    allTrails = allTrails.filter((trail, index, self) =>
-                        index === self.findIndex((t) => (t.name === trail.name))
-                    );
-
-                } else {
-                    allTrails = [];
-                }
-
-                renderUI();
-
+                renderList(osmData.elements);
             } catch (err) {
-                console.error(err);
-                container.innerHTML = `
-                <div class="text-center p-4">
-                    <p class="text-red-400 text-sm font-bold mb-2">The public mapping server is busy.</p>
-                    <p class="text-gray-400 text-xs">OpenStreetMap occasionally drops requests when too many people are using it. Please wait 10 seconds and hit search again.</p>
-                </div>`;
+                resDiv.innerHTML = `<p class="text-red-400 text-sm">Error: ${err.message}</p>`;
             }
         }
 
-        function renderUI() {
-            if (markersGroup) markersGroup.clearLayers();
-            const container = document.getElementById('cards-container');
-            container.innerHTML = '';
+        // 3. Render List
+        function renderList(trails) {
+            const resDiv = document.getElementById('results');
+            resDiv.innerHTML = "";
+            trailLayer.clearLayers();
 
-            const difficultyFilter = document.getElementById('filter-difficulty').value;
-            const distanceFilter = document.getElementById('filter-distance').value;
-            const sortOrder = document.getElementById('sort-select').value;
-            const maxRadiusMeters = parseInt(document.getElementById('radius-select').value);
+            if (trails.length === 0) resDiv.innerHTML = "No trails found.";
 
-            let filtered = allTrails.filter(t => {
-                if (difficultyFilter !== 'Any' && t.difficulty !== difficultyFilter) return false;
-                
-                if
+            trails.forEach(t => {
+                const name = t.tags?.name || "Unnamed Path";
+                const div = document.createElement('div');
+                div.className = "p-3 bg-gray-800 rounded border border-gray-700 cursor-pointer hover:bg-gray-700 text-sm";
+                div.innerHTML = name;
+                div.onclick = () => drawTrail(t);
+                resDiv.appendChild(div);
+            });
+        }
+
+        // 4. Draw Trail
+        function drawTrail(t) {
+            trailLayer.clearLayers();
+            const coords = t.geometry ? t.geometry.map(p => [p.lat, p.lon]) : [];
+            if (coords.length) {
+                const line = L.polyline(coords, { color: '#10b981', weight: 4 }).addTo(trailLayer);
+                map.fitBounds(line.getBounds());
+            }
+        }
+
+        // Start everything
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            document.getElementById('search-btn').onclick = performSearch;
+        });
+    </script>
+</body>
+</html>
